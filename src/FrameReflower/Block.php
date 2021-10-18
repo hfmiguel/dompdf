@@ -784,6 +784,8 @@ class Block extends AbstractFrameReflower
             return;
         }
 
+        $this->determine_absolute_containing_block();
+
         // Generated content
         $this->_set_content();
 

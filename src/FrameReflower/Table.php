@@ -392,6 +392,8 @@ class Table extends AbstractFrameReflower
         // inside tds.)
         $page->table_reflow_start();
 
+        $this->determine_absolute_containing_block();
+
         // Collapse vertical margins, if required
         $this->_collapse_margins();
 
