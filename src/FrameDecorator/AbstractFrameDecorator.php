@@ -375,7 +375,40 @@ abstract class AbstractFrameDecorator extends Frame
      */
     function set_containing_block($x = null, $y = null, $w = null, $h = null)
     {
-        $this->_frame->set_containing_block($x, $y, $w, $h);
+        $style = $this->_frame->get_style();
+
+        switch ($style->position) {
+            case "absolute":
+                $parent = $this->find_positionned_parent();
+                if ($parent !== $this->get_root()->get_first_child()) {
+                    $parent_padding_box = $parent->get_padding_box();
+                    //FIXME: an accurate measure of the positioned parent height
+                    //       is not possible until reflow has completed;
+                    //       we'll fall back to the parent's containing block,
+                    //       which is wrong for auto-height parents
+                    $containing_block_height = $parent_padding_box["h"];
+                    if ($containing_block_height === "auto") {
+                        $parent_style = $parent->get_style();
+                        $parent_containing_block = $parent->get_containing_block();
+                        $containing_block_height = $parent_containing_block["h"] -
+                            (float)$parent_style->length_in_pt([
+                                $parent_style->margin_top,
+                                $parent_style->margin_bottom,
+                                $parent_style->border_top_width,
+                                $parent_style->border_bottom_width
+                            ], $parent_containing_block["w"]);
+                    }
+                    $this->_frame->set_containing_block($parent_padding_box["x"], $parent_padding_box["y"], $parent_padding_box["w"], $containing_block_height);
+                    break;
+                }
+            case "fixed":
+                $initial_cb = $this->get_root()->get_first_child()->get_containing_block();
+                $this->_frame->set_containing_block($initial_cb["x"], $initial_cb["y"], $initial_cb["w"], $initial_cb["h"]);
+                break;
+            default:
+                $this->_frame->set_containing_block($x, $y, $w, $h);
+                break;
+        }
     }
 
     /**
